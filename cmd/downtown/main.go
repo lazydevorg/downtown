@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func main() {
-	fmt.Println("YO!")
+	app := NewApp()
+
+	var err error
+	var tasks Response[TasksData]
+	err = app.Client.GetTasks(&tasks)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(tasks.Data)
 }
