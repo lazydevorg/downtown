@@ -123,7 +123,7 @@ type TasksData struct {
 }
 
 func (c *Client) GetTasks(response *Response[TasksData]) error {
-	u := fmt.Sprintf(TASKS_URL, c.host, c.sid)
+	u := fmt.Sprintf(TASKS_URL, c.host)
 	err := doAuthenticatedRequest(c, "get tasks", u, response)
 	if err != nil {
 		return err
