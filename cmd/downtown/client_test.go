@@ -12,7 +12,7 @@ const (
 )
 
 func TestSuccessfulDoRequest(t *testing.T) {
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RequestURI() != "/test-request" {
 			t.Errorf("requests url '%s' used but expected '%s'", r.URL.RequestURI(), "/test-request")
 		}
@@ -20,20 +20,18 @@ func TestSuccessfulDoRequest(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		data := []byte("{\"data\":null,\"success\":true}")
 		_, _ = w.Write(data)
-	}))
-	defer ts.Close()
+	})
+	defer s.Close()
 
-	host := strings.TrimPrefix(ts.URL, "https://")
-	c := NewClient(host, "user", "pass")
 	res := new(Response[string])
-	err := doRequest(c, "test request", ts.URL+"/test-request", res)
+	err := doRequest(c, "test request", s.URL+"/test-request", res)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestUnsuccessfulDoRequest(t *testing.T) {
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RequestURI() != "/test-request" {
 			t.Errorf("requests url '%s' used but expected '%s'", r.URL.RequestURI(), "/test-request")
 		}
@@ -41,13 +39,11 @@ func TestUnsuccessfulDoRequest(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		data := []byte("{\"data\":null,\"success\":false,\"error\":{\"code\":1}}")
 		_, _ = w.Write(data)
-	}))
-	defer ts.Close()
+	})
+	defer s.Close()
 
-	host := strings.TrimPrefix(ts.URL, "https://")
-	c := NewClient(host, "user", "pass")
 	res := new(Response[string])
-	err := doRequest(c, "test request", ts.URL+"/test-request", res)
+	err := doRequest(c, "test request", s.URL+"/test-request", res)
 	if err == nil {
 		t.Fatal("error expected when response has success field to false")
 	}
@@ -57,7 +53,7 @@ func TestUnsuccessfulDoRequest(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
-	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RequestURI() != EXPECTED_LOGIN_URL {
 			t.Errorf("login url '%s' used but expected '%s'", r.URL.RequestURI(), EXPECTED_LOGIN_URL)
 		}
@@ -65,11 +61,9 @@ func TestLogin(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		data := []byte("{\"data\":{\"did\":\"DIDDID\",\"is_portal_port\":false,\"sid\":\"SIDDIS\"},\"success\":true}")
 		_, _ = w.Write(data)
-	}))
-	defer ts.Close()
+	})
+	defer s.Close()
 
-	host := strings.TrimPrefix(ts.URL, "https://")
-	c := NewClient(host, "user", "pass")
 	err := c.Login()
 	if err != nil {
 		t.Error(err)
@@ -77,4 +71,10 @@ func TestLogin(t *testing.T) {
 	if c.sid != "SIDDIS" {
 		t.Errorf("login sid is '%s' while 'SIDDIS' expected", c.sid)
 	}
+}
+
+func testClient(f http.HandlerFunc) (*Client, *httptest.Server) {
+	ts := httptest.NewTLSServer(f)
+	host := strings.TrimPrefix(ts.URL, "https://")
+	return NewClient(host, "user", "pass"), ts
 }
