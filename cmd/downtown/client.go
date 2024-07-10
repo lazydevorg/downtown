@@ -69,18 +69,19 @@ func doAuthenticatedRequest[T any](c *Client, name string, u string, response *R
 		}
 	}
 
-	u = fmt.Sprintf("%s&_sid=%s", u, c.sid)
-	err := doRequest(c, name, u, response)
+	urlWithSid := fmt.Sprintf("%s&_sid=%s", u, c.sid)
+	err := doRequest(c, name, urlWithSid, response)
 	if err != nil {
-		return err
-	}
-
-	if response.Error.Code == 105 {
-		err := c.Login()
-		if err != nil {
-			return fmt.Errorf("login failed executing %s: %w", name, err)
+		if response != nil && response.Error.Code == 105 {
+			err := c.Login()
+			if err != nil {
+				return fmt.Errorf("login failed executing %s: %w", name, err)
+			}
+			urlWithSid = fmt.Sprintf("%s&_sid=%s", u, c.sid)
+			return doRequest(c, name, urlWithSid, response)
 		}
 	}
+
 	return nil
 }
 
