@@ -41,5 +41,5 @@ func requireEnvVar(name string) string {
 }
 
 func initClient(config *Config) *Client {
-	return NewClient(config.host, config.user, config.pass)
+	return NewClient(config.host)
 }

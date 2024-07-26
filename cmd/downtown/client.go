@@ -1,34 +1,31 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
-	LOGIN_URL = "https://%s/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=%s&passwd=%s&session=DownloadStation&format=sid"
-	TASKS_URL = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer"
+	LoginUrl = "https://%s/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=%s&passwd=%s&session=DownloadStation&format=sid"
+	TasksUrl = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer"
 )
 
 type Client struct {
 	client http.Client
 	host   string
-	user   string
-	pass   string
-	sid    string
 }
 
-func NewClient(host string, user string, pass string) *Client {
+func NewClient(host string) *Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	return &Client{
 		client: http.Client{Transport: tr},
 		host:   host,
-		user:   user,
-		pass:   pass,
 	}
 }
 
@@ -40,12 +37,8 @@ type Response[T any] struct {
 	Data T `json:"data"`
 }
 
-func doRequest[T any](c *Client, name string, u string, response *Response[T]) error {
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return fmt.Errorf("creating %s request: %w", name, err)
-	}
-	res, err := c.client.Do(req)
+func doRequest[T any](c *Client, name string, request *http.Request, response *Response[T]) error {
+	res, err := c.client.Do(request)
 	if err != nil {
 		return fmt.Errorf("doing %s request: %w", name, err)
 	}
@@ -61,44 +54,59 @@ func doRequest[T any](c *Client, name string, u string, response *Response[T]) e
 	return nil
 }
 
-func doAuthenticatedRequest[T any](c *Client, name string, u string, response *Response[T]) error {
-	if c.sid == "" {
-		err := c.Login()
-		if err != nil {
-			return fmt.Errorf("login failed executing %s: %w", name, err)
-		}
-	}
+//func doAuthenticatedRequest[T any](c *Client, name string, request *http.Request, sid string, response *Response[T]) error {
+//	urlWithSid := fmt.Sprintf("%s?sid=%s", u, sid)
+//	request, err := http.NewRequestWithContext(ctx, "GET", requestUrl, nil)
+//	if err != nil {
+//		return nil, fmt.Errorf("creating login request: %w", err)
+//	}
+//	err := doRequest(c, name, urlWithSid, response)
+//	if err != nil {
+//		if response != nil && response.Error.Code == 105 {
+//			err := c.Login()
+//			if err != nil {
+//				return fmt.Errorf("login failed executing %s: %w", name, err)
+//			}
+//			return doRequest(c, name, c.urlWithSid(u), response)
+//		}
+//	}
+//
+//	return nil
+//}
 
-	urlWithSid := fmt.Sprintf("%s&_sid=%s", u, c.sid)
-	err := doRequest(c, name, urlWithSid, response)
-	if err != nil {
-		if response != nil && response.Error.Code == 105 {
-			err := c.Login()
-			if err != nil {
-				return fmt.Errorf("login failed executing %s: %w", name, err)
-			}
-			urlWithSid = fmt.Sprintf("%s&_sid=%s", u, c.sid)
-			return doRequest(c, name, urlWithSid, response)
-		}
-	}
-
-	return nil
+type LoginRequest struct {
+	user string
+	pass string
 }
 
-type LoginData struct {
+type LoginResponseData struct {
 	SID string `json:"sid"`
 	DID string `json:"did"`
 }
 
-func (c *Client) Login() error {
-	u := fmt.Sprintf(LOGIN_URL, c.host, c.user, c.pass)
-	var result Response[LoginData]
-	err := doRequest(c, "login", u, &result)
-	if err != nil {
-		return err
+func (c *Client) createRequest(ctx context.Context, requestUrl string, urlParams ...string) (*http.Request, error) {
+	params := make([]any, len(urlParams)+1)
+	params[0] = c.host
+	for i, p := range urlParams {
+		params[i+1] = url.QueryEscape(p)
 	}
-	c.sid = result.Data.SID
-	return nil
+	if len(params) > 1 {
+		requestUrl = fmt.Sprintf(requestUrl, params...)
+	}
+	return http.NewRequestWithContext(ctx, "GET", requestUrl, nil)
+}
+
+func (c *Client) Login(ctx context.Context, data LoginRequest) (*Response[LoginResponseData], error) {
+	request, err := c.createRequest(ctx, LoginUrl, data.user, data.pass)
+	if err != nil {
+		return nil, fmt.Errorf("creating login request: %w", err)
+	}
+	response := new(Response[LoginResponseData])
+	err = doRequest(c, "login", request, response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 type TasksData struct {
@@ -123,11 +131,11 @@ type TasksData struct {
 	Total int `json:"total"`
 }
 
-func (c *Client) GetTasks(response *Response[TasksData]) error {
-	u := fmt.Sprintf(TASKS_URL, c.host)
-	err := doAuthenticatedRequest(c, "get tasks", u, response)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//func (c *Client) GetTasks(response *Response[TasksData]) error {
+//	u := fmt.Sprintf(TasksUrl, c.host)
+//	err := doAuthenticatedRequest(c, "get tasks", u, response)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
