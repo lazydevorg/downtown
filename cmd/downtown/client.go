@@ -54,26 +54,6 @@ func doRequest[T any](c *Client, name string, request *http.Request, response *R
 	return nil
 }
 
-//func doAuthenticatedRequest[T any](c *Client, name string, request *http.Request, sid string, response *Response[T]) error {
-//	urlWithSid := fmt.Sprintf("%s?sid=%s", u, sid)
-//	request, err := http.NewRequestWithContext(ctx, "GET", requestUrl, nil)
-//	if err != nil {
-//		return nil, fmt.Errorf("creating login request: %w", err)
-//	}
-//	err := doRequest(c, name, urlWithSid, response)
-//	if err != nil {
-//		if response != nil && response.Error.Code == 105 {
-//			err := c.Login()
-//			if err != nil {
-//				return fmt.Errorf("login failed executing %s: %w", name, err)
-//			}
-//			return doRequest(c, name, c.urlWithSid(u), response)
-//		}
-//	}
-//
-//	return nil
-//}
-
 type LoginRequest struct {
 	user string
 	pass string
@@ -90,10 +70,15 @@ func (c *Client) createRequest(ctx context.Context, requestUrl string, urlParams
 	for i, p := range urlParams {
 		params[i+1] = url.QueryEscape(p)
 	}
-	if len(params) > 1 {
+	if len(params) > 0 {
 		requestUrl = fmt.Sprintf(requestUrl, params...)
 	}
 	return http.NewRequestWithContext(ctx, "GET", requestUrl, nil)
+}
+
+func (c *Client) createAuthenticatedRequest(ctx context.Context, requestUrl string, sid string, urlParams ...string) (*http.Request, error) {
+	requestUrl = requestUrl + "&_sid=" + sid
+	return c.createRequest(ctx, requestUrl, urlParams...)
 }
 
 func (c *Client) Login(ctx context.Context, data LoginRequest) (*Response[LoginResponseData], error) {
@@ -131,11 +116,14 @@ type TasksData struct {
 	Total int `json:"total"`
 }
 
-//func (c *Client) GetTasks(response *Response[TasksData]) error {
-//	u := fmt.Sprintf(TasksUrl, c.host)
-//	err := doAuthenticatedRequest(c, "get tasks", u, response)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
+func (c *Client) GetTasks(ctx context.Context, sid string, response *Response[TasksData]) error {
+	request, err := c.createAuthenticatedRequest(ctx, TasksUrl, sid)
+	if err != nil {
+		return fmt.Errorf("creating tasks request: %w", err)
+	}
+	err = doRequest(c, "tasks", request, response)
+	if err != nil {
+		return err
+	}
+	return nil
+}
