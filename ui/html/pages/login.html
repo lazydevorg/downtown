@@ -1,0 +1,19 @@
+{{define "title"}}Login{{end}}
+
+{{define "main"}}
+    <h1>Login</h1>
+    <form action="/login" method="post">
+        <fieldset>
+            <input
+                    name="user"
+                    placeholder="Username"
+                    autocomplete="username">
+            <input
+                    name="pass"
+                    type="password"
+                    placeholder="Password"
+                    autocomplete="password">
+            <input type="submit" value="Login"/>
+        </fieldset>
+    </form>
+{{end}}
