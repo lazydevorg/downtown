@@ -15,13 +15,13 @@ func NewWebApp(app *App) *WebApp {
 	}
 }
 
-func (a *WebApp) Start() {
+func (a *WebApp) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", a.home)
 	mux.HandleFunc("GET /login", a.loginPage)
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("GET /tasks", a.tasks)
-	_ = http.ListenAndServe("localhost:4000", mux)
+	return mux
 }
 
 func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
