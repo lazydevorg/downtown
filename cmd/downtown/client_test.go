@@ -10,6 +10,7 @@ import (
 
 const (
 	ExpectedLoginUrl = "/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=user&passwd=pass&session=DownloadStation&format=sid"
+	ExpectedTasksUrl = "/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer&_sid=SID"
 )
 
 func TestSuccessfulDoRequest(t *testing.T) {
@@ -85,16 +86,46 @@ func TestLogin(t *testing.T) {
 	}
 }
 
+func TestCreateAuthenticatedRequest(t *testing.T) {
+	c := NewClient("localhost")
+	req, err := c.createAuthenticatedRequest(context.Background(), "https://%s/test-request?", "SID")
+	if err != nil {
+		t.Fatalf("failed to create authenticated request: %v", err)
+	}
+	if req.URL.Query().Get("_sid") != "SID" {
+		t.Errorf("authenticated request url '%s' used but expected '%s'", req.URL.Query().Get("_sid"), "SID")
+	}
+}
+
+func TestTasks(t *testing.T) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() != ExpectedTasksUrl {
+			t.Errorf("tasks url '%s' used but expected '%s'", r.URL.RequestURI(), ExpectedTasksUrl)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		data := []byte(`{"data":{"offset":0,"tasks":[],"total":3},"success":true}`)
+		_, _ = w.Write(data)
+	})
+	defer s.Close()
+
+	var response Response[TasksData]
+	err := c.GetTasks(context.Background(), "SID", &response)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testClient(f http.HandlerFunc) (*Client, *httptest.Server) {
 	ts := httptest.NewTLSServer(f)
 	host := strings.TrimPrefix(ts.URL, "https://")
 	return NewClient(host), ts
 }
 
-func sequantialRequests(f ...http.HandlerFunc) http.HandlerFunc {
-	index := 0
-	return func(w http.ResponseWriter, r *http.Request) {
-		f[index](w, r)
-		index++
-	}
-}
+//func sequantialRequests(f ...http.HandlerFunc) http.HandlerFunc {
+//	index := 0
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		f[index](w, r)
+//		index++
+//	}
+//}

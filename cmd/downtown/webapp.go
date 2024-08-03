@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 )
@@ -21,25 +20,21 @@ func (a *WebApp) Start() {
 	mux.HandleFunc("GET /", a.home)
 	mux.HandleFunc("GET /login", a.loginPage)
 	mux.HandleFunc("POST /login", a.login)
+	mux.HandleFunc("GET /tasks", a.tasks)
 	_ = http.ListenAndServe("localhost:4000", mux)
 }
 
 func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
-	ts, err := template.ParseFiles(
-		"./ui/html/pages/base.html",
-		"./ui/html/pages/home.html")
+	_, err := r.Cookie("sid")
+	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	err = ts.Execute(w, nil)
-	if err != nil {
-		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
+		http.Redirect(w, r, "/login", http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/tasks", http.StatusFound)
 	}
 }
 
-func (a *WebApp) loginPage(w http.ResponseWriter, r *http.Request) {
+func (a *WebApp) loginPage(w http.ResponseWriter, _ *http.Request) {
 	ts, err := template.ParseFiles(
 		"./ui/html/pages/base.html",
 		"./ui/html/pages/login.html")
@@ -69,6 +64,48 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 		Value:  response.Data.SID,
 		Secure: true,
 	})
-	_, _ = fmt.Fprintf(w, "Login succeeded with SID: %s", response.Data.SID)
-	w.(http.Flusher).Flush()
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+//func (a *WebApp) requireAuthentication(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		_, err := r.Cookie("sid")
+//		if err != nil {
+//			http.Redirect(w, r, "/login", http.StatusFound)
+//			return
+//		}
+//		w.Header().Add("Cache-Control", "no-store")
+//		next.ServeHTTP(w, r)
+//	})
+//}
+
+func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
+	ts, err := template.ParseFiles(
+		"./ui/html/pages/base.html",
+		"./ui/html/pages/tasks.html")
+	if err != nil {
+		http.Error(w, "Internal Server Error "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	sidCookie, err := r.Cookie("sid")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	var tasksResponse Response[TasksData]
+	err = a.App.Client.GetTasks(r.Context(), sidCookie.Value, &tasksResponse)
+	if err != nil {
+		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+	err = ts.Execute(w, tasksResponse.Data)
+	if err != nil {
+		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 }
