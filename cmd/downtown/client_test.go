@@ -25,7 +25,7 @@ func TestSuccessfulDoRequest(t *testing.T) {
 	defer s.Close()
 
 	res := new(Response[string])
-	req, err := c.createRequest(context.Background(), s.URL+"/test-request")
+	req, err := c.createRequest(context.Background(), "https://%s/test-request")
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestUnsuccessfulDoRequest(t *testing.T) {
 	defer s.Close()
 
 	res := new(Response[string])
-	req, err := c.createRequest(context.Background(), s.URL+"/test-request")
+	req, err := c.createRequest(context.Background(), "https://%s/test-request")
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
