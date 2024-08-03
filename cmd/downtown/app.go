@@ -8,22 +8,18 @@ import (
 
 type AppConfig struct {
 	host string
-	user string
-	pass string
 	addr string
 }
 
 type App struct {
 	Config *AppConfig
-	Client *Client
+	Client Client
 	Logger *slog.Logger
 }
 
 func LoadAppConfig() *AppConfig {
 	return &AppConfig{
 		host: requireEnvVar("HOST"),
-		user: requireEnvVar("USER"),
-		pass: requireEnvVar("PASS"),
 		addr: requireEnvVar("ADDR"),
 	}
 }
