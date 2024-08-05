@@ -1,17 +1,39 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"time"
 )
 
 func main() {
-	app := NewApp()
-
-	var err error
-	var tasks Response[TasksData]
-	err = app.Client.GetTasks(&tasks)
-	if err != nil {
-		fmt.Println(err)
+	appConfig := LoadAppConfig()
+	client := NewClient(appConfig.host)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	app := App{
+		Config: appConfig,
+		Client: client,
+		Logger: logger,
 	}
-	fmt.Println(tasks.Data)
+
+	webapp := WebApp{
+		App:       &app,
+		Templates: LoadTemplates(),
+	}
+	srv := &http.Server{
+		Addr:         appConfig.addr,
+		Handler:      webapp.routes(),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  time.Minute,
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
+
+	logger.Info("Server started", "addr", srv.Addr)
+	err := srv.ListenAndServe()
+	if err != nil {
+		logger.Error("Shutting down the server: %v", err)
+		os.Exit(1)
+	}
 }

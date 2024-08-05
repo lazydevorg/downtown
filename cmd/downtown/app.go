@@ -2,33 +2,25 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 )
 
-type Config struct {
+type AppConfig struct {
 	host string
-	user string
-	pass string
+	addr string
 }
 
 type App struct {
-	Config *Config
+	Config *AppConfig
 	Client *Client
+	Logger *slog.Logger
 }
 
-func NewApp() *App {
-	config := loadConfig()
-	return &App{
-		Config: config,
-		Client: initClient(config),
-	}
-}
-
-func loadConfig() *Config {
-	return &Config{
+func LoadAppConfig() *AppConfig {
+	return &AppConfig{
 		host: requireEnvVar("HOST"),
-		user: requireEnvVar("USER"),
-		pass: requireEnvVar("PASS"),
+		addr: requireEnvVar("ADDR"),
 	}
 }
 
@@ -38,8 +30,4 @@ func requireEnvVar(name string) string {
 		panic(fmt.Sprintf("environment variable %s not set", name))
 	}
 	return value
-}
-
-func initClient(config *Config) *Client {
-	return NewClient(config.host, config.user, config.pass)
 }

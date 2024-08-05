@@ -1,0 +1,29 @@
+{{define "title"}}Tasks{{end}}
+
+{{define "main"}}
+    <h1>Tasks</h1>
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Status</th>
+                <th scope="col">Type</th>
+                <th scope="col">Size</th>
+                <th scope="col">Downloaded</th>
+                <th scope="col">Uploaded</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Tasks}}
+            <tr>
+                <td>{{.Title}}</td>
+                <td>{{.Status}}</td>
+                <td>{{.Type}}</td>
+                <td>{{.Size}}</td>
+                <td>{{.Additional.Transfer.SizeDownloaded}}</td>
+                <td>{{.Additional.Transfer.SizeUploaded}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+{{end}}
