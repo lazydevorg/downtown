@@ -18,7 +18,8 @@ func main() {
 	}
 
 	webapp := WebApp{
-		App: &app,
+		App:       &app,
+		Templates: LoadTemplates(),
 	}
 	srv := &http.Server{
 		Addr:         appConfig.addr,

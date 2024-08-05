@@ -3,11 +3,14 @@ package main
 import (
 	"downtown.zigdev.com/ui"
 	"html/template"
+	"io/fs"
 	"net/http"
+	"path/filepath"
 )
 
 type WebApp struct {
-	App *App
+	App       *App
+	Templates map[string]*template.Template
 }
 
 func NewWebApp(app *App) *WebApp {
@@ -36,15 +39,8 @@ func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *WebApp) loginPage(w http.ResponseWriter, _ *http.Request) {
-	ts, err := template.ParseFS(
-		ui.Files,
-		"html/base.html",
-		"html/pages/login.html")
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	err = ts.Execute(w, nil)
+	ts := a.Templates["login.html"]
+	err := ts.ExecuteTemplate(w, "base.html", nil)
 	if err != nil {
 		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -82,34 +78,25 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 //}
 
 func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
-	ts, err := template.ParseFS(
-		ui.Files,
-		"html/base.html",
-		"html/pages/tasks.html")
-	if err != nil {
-		http.Error(w, "Internal Server Error "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	sid := requireSid(w, r)
 	if sid == "" {
 		return
 	}
 
 	var tasksResponse Response[TasksData]
-	err = a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
+	err := a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
 		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
-	err = ts.Execute(w, tasksResponse.Data)
+	ts := a.Templates["tasks.html"]
+	err = ts.ExecuteTemplate(w, "base.html", tasksResponse.Data)
 	if err != nil {
 		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func requireSid(w http.ResponseWriter, r *http.Request) string {
@@ -120,4 +107,25 @@ func requireSid(w http.ResponseWriter, r *http.Request) string {
 		return ""
 	}
 	return sidCookie.Value
+}
+
+func LoadTemplates() map[string]*template.Template {
+	pages, err := fs.Glob(ui.Files, "html/pages/*.html")
+	cache := make(map[string]*template.Template, len(pages))
+	if err != nil {
+		panic("Can't load templates: " + err.Error())
+	}
+	for _, page := range pages {
+		name := filepath.Base(page)
+		patterns := []string{
+			"html/base.html",
+			page,
+		}
+		ts, err := template.New(name).ParseFS(ui.Files, patterns...)
+		if err != nil {
+			panic("Can't load templates: " + err.Error())
+		}
+		cache[name] = ts
+	}
+	return cache
 }
