@@ -1,6 +1,7 @@
 package main
 
 import (
+	"downtown.zigdev.com/ui"
 	"html/template"
 	"net/http"
 )
@@ -35,9 +36,10 @@ func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *WebApp) loginPage(w http.ResponseWriter, _ *http.Request) {
-	ts, err := template.ParseFiles(
-		"./ui/html/pages/base.html",
-		"./ui/html/pages/login.html")
+	ts, err := template.ParseFS(
+		ui.Files,
+		"html/base.html",
+		"html/pages/login.html")
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -80,22 +82,22 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 //}
 
 func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
-	ts, err := template.ParseFiles(
-		"./ui/html/pages/base.html",
-		"./ui/html/pages/tasks.html")
+	ts, err := template.ParseFS(
+		ui.Files,
+		"html/base.html",
+		"html/pages/tasks.html")
 	if err != nil {
 		http.Error(w, "Internal Server Error "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	sidCookie, err := r.Cookie("sid")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
+	sid := requireSid(w, r)
+	if sid == "" {
 		return
 	}
 
 	var tasksResponse Response[TasksData]
-	err = a.App.Client.GetTasks(r.Context(), sidCookie.Value, &tasksResponse)
+	err = a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
 		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -108,4 +110,14 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func requireSid(w http.ResponseWriter, r *http.Request) string {
+	sidCookie, err := r.Cookie("sid")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		w.(http.Flusher).Flush()
+		return ""
+	}
+	return sidCookie.Value
 }

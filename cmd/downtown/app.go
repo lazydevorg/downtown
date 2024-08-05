@@ -13,7 +13,7 @@ type AppConfig struct {
 
 type App struct {
 	Config *AppConfig
-	Client Client
+	Client *Client
 	Logger *slog.Logger
 }
 

@@ -29,8 +29,10 @@ func main() {
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
+	logger.Info("Server started", "addr", srv.Addr)
 	err := srv.ListenAndServe()
 	if err != nil {
-		println(err)
+		logger.Error("Shutting down the server: %v", err)
+		os.Exit(1)
 	}
 }
