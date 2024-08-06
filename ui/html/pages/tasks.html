@@ -19,9 +19,9 @@
                 <td>{{.Title}}</td>
                 <td>{{.Status}}</td>
                 <td>{{.Type}}</td>
-                <td>{{.Size}}</td>
-                <td>{{.Additional.Transfer.SizeDownloaded}}</td>
-                <td>{{.Additional.Transfer.SizeUploaded}}</td>
+                <td>{{humanSize .Size}}</td>
+                <td>{{humanSize .Additional.Transfer.SizeDownloaded}}</td>
+                <td>{{humanSize .Additional.Transfer.SizeUploaded}}</td>
             </tr>
             {{end}}
         </tbody>

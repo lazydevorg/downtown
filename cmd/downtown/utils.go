@@ -9,20 +9,21 @@ const (
 	GB
 )
 
-func HumanizeSize(bytes float64) string {
+func HumanizeSize(bytes int64) string {
 	var unit string
+	var size float64
 	switch {
 	case bytes >= GB:
 		unit = "GB"
-		bytes = bytes / GB
+		size = float64(bytes) / GB
 	case bytes >= MB:
 		unit = "MB"
-		bytes = bytes / MB
+		size = float64(bytes) / MB
 	case bytes >= KB:
 		unit = "KB"
-		bytes = bytes / KB
+		size = float64(bytes) / KB
 	default:
-		return fmt.Sprintf("%.2fB", bytes)
+		return fmt.Sprintf("%.2fB", size)
 	}
-	return fmt.Sprintf("%.2f%s", bytes, unit)
+	return fmt.Sprintf("%.2f%s", size, unit)
 }

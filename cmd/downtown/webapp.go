@@ -11,6 +11,10 @@ import (
 
 type TemplateCache map[string]*template.Template
 
+var templateFunctions = template.FuncMap{
+	"humanSize": HumanizeSize,
+}
+
 type WebApp struct {
 	App       *App
 	Templates TemplateCache
@@ -111,17 +115,18 @@ func requireSid(w http.ResponseWriter, r *http.Request) string {
 
 func LoadTemplates() TemplateCache {
 	pages, err := fs.Glob(ui.Files, "html/pages/*.html")
-	cache := make(TemplateCache, len(pages))
 	if err != nil {
 		panic("Can't load templates: " + err.Error())
 	}
+	cache := make(TemplateCache, len(pages))
+
 	for _, page := range pages {
 		name := filepath.Base(page)
 		patterns := []string{
 			"html/base.html",
 			page,
 		}
-		ts, err := template.New(name).ParseFS(ui.Files, patterns...)
+		ts, err := template.New(name).Funcs(templateFunctions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			panic("Can't load templates: " + err.Error())
 		}
