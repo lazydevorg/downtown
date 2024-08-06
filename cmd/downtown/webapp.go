@@ -27,6 +27,7 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("GET /{$}", a.home)
 	mux.HandleFunc("GET /login", a.loginPage)
 	mux.HandleFunc("POST /login", a.login)
+	mux.HandleFunc("GET /logout", a.logout)
 	mux.HandleFunc("GET /tasks", a.tasks)
 	mux.HandleFunc("/", a.notFound)
 	return a.logRequests(mux)
@@ -85,6 +86,16 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:  "sid",
 		Value: response.Data.SID,
+	})
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (a *WebApp) logout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+	http.SetCookie(w, &http.Cookie{
+		Name:   "sid",
+		Value:  "",
+		MaxAge: -1,
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
