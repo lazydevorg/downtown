@@ -8,9 +8,11 @@ import (
 	"path/filepath"
 )
 
+type TemplateCache map[string]*template.Template
+
 type WebApp struct {
 	App       *App
-	Templates map[string]*template.Template
+	Templates TemplateCache
 }
 
 func (a *WebApp) routes() http.Handler {
@@ -99,9 +101,9 @@ func requireSid(w http.ResponseWriter, r *http.Request) string {
 	return sidCookie.Value
 }
 
-func LoadTemplates() map[string]*template.Template {
+func LoadTemplates() TemplateCache {
 	pages, err := fs.Glob(ui.Files, "html/pages/*.html")
-	cache := make(map[string]*template.Template, len(pages))
+	cache := make(TemplateCache, len(pages))
 	if err != nil {
 		panic("Can't load templates: " + err.Error())
 	}
