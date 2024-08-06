@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -87,7 +88,7 @@ func TestLogin(t *testing.T) {
 }
 
 func TestCreateAuthenticatedRequest(t *testing.T) {
-	c := NewClient("localhost")
+	c := NewClient("localhost", slog.Default())
 	req, err := c.createAuthenticatedRequest(context.Background(), "https://%s/test-request?", "SID")
 	if err != nil {
 		t.Fatalf("failed to create authenticated request: %v", err)
@@ -119,7 +120,7 @@ func TestTasks(t *testing.T) {
 func testClient(f http.HandlerFunc) (*Client, *httptest.Server) {
 	ts := httptest.NewTLSServer(f)
 	host := strings.TrimPrefix(ts.URL, "https://")
-	return NewClient(host), ts
+	return NewClient(host, slog.Default()), ts
 }
 
 //func sequantialRequests(f ...http.HandlerFunc) http.HandlerFunc {

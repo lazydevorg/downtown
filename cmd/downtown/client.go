@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 )
@@ -17,15 +18,17 @@ const (
 type Client struct {
 	client http.Client
 	host   string
+	logger *slog.Logger
 }
 
-func NewClient(host string) *Client {
+func NewClient(host string, logger *slog.Logger) *Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	return &Client{
 		client: http.Client{Transport: tr},
 		host:   host,
+		logger: logger,
 	}
 }
 
@@ -38,17 +41,21 @@ type Response[T any] struct {
 }
 
 func doRequest[T any](c *Client, name string, request *http.Request, response *Response[T]) error {
+	c.logger.Debug("Executing DS request", "name", name, "method", request.Method, "url", request.URL)
 	res, err := c.client.Do(request)
 	if err != nil {
+		c.logger.Debug("Error executing request", "name", name, "error", err)
 		return fmt.Errorf("doing %s request: %w", name, err)
 	}
 	defer res.Body.Close()
 
 	err = json.NewDecoder(res.Body).Decode(response)
 	if err != nil {
+		c.logger.Debug("Error parsing response", "name", name, "error", err)
 		return fmt.Errorf("parsing %s response: %w", name, err)
 	}
 	if !response.Success {
+		c.logger.Debug("Request error", "name", name, "code", response.Error.Code)
 		return fmt.Errorf("%s request error: code %d", name, response.Error.Code)
 	}
 	return nil
