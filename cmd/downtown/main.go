@@ -22,6 +22,7 @@ func main() {
 
 	webapp := WebApp{
 		App:       &app,
+		Logger:    logger,
 		Templates: LoadTemplates(),
 	}
 	srv := &http.Server{

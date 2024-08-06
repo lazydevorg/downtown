@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 )
@@ -17,6 +18,7 @@ var templateFunctions = template.FuncMap{
 
 type WebApp struct {
 	App       *App
+	Logger    *slog.Logger
 	Templates TemplateCache
 }
 
@@ -49,7 +51,7 @@ func (a *WebApp) renderError(w http.ResponseWriter, serverError error) {
 
 func (a *WebApp) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.App.Logger.Debug("request received", "method", r.Method, "uri", r.URL.Path)
+		a.Logger.Debug("request received", "method", r.Method, "uri", r.URL.Path)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -76,7 +78,7 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 		pass: pass,
 	})
 	if err != nil {
-		a.App.Logger.Error("login error", "error", err)
+		a.Logger.Error("login error", "error", err)
 		a.renderError(w, err)
 		return
 	}
@@ -96,7 +98,7 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 	var tasksResponse Response[TasksData]
 	err := a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
-		a.App.Logger.Error("tasks error", "error", err)
+		a.Logger.Error("tasks error", "error", err)
 		a.renderError(w, err)
 		return
 	}
@@ -108,7 +110,7 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {
 	err := fmt.Errorf("Page %s not found", r.URL.Path)
 	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
-	a.App.Logger.Warn("page not found", "url", r.URL.Path)
+	a.Logger.Warn("page not found", "url", r.URL.Path)
 	a.renderError(w, err)
 }
 
