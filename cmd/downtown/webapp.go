@@ -27,7 +27,7 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("GET /tasks", a.tasks)
 	mux.HandleFunc("/", a.notFound)
-	return mux
+	return a.logRequests(mux)
 }
 
 func (a *WebApp) renderTemplate(w http.ResponseWriter, name string, data any) {
@@ -45,6 +45,13 @@ func (a *WebApp) renderError(w http.ResponseWriter, serverError error) {
 	if err != nil {
 		panic("error rendering template: " + err.Error())
 	}
+}
+
+func (a *WebApp) logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.App.Logger.Debug("request received", "method", r.Method, "uri", r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
