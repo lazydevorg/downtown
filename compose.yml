@@ -4,7 +4,5 @@ services:
     build: .
     ports:
       - "4000:4000"
-    network_mode: host
     environment:
-      HOST: 192.168.50.38:5001
-      ADDR: :4000
+      DOWNLOAD_STATION_HOST: "192.168.50.38:5001"
