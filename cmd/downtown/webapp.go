@@ -13,19 +13,30 @@ type WebApp struct {
 	Templates map[string]*template.Template
 }
 
-func NewWebApp(app *App) *WebApp {
-	return &WebApp{
-		App: app,
-	}
-}
-
 func (a *WebApp) routes() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", a.home)
+	mux.HandleFunc("GET /{$}", a.home)
 	mux.HandleFunc("GET /login", a.loginPage)
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("GET /tasks", a.tasks)
 	return mux
+}
+
+func (a *WebApp) renderTemplate(w http.ResponseWriter, name string, data any) {
+	ts := a.Templates[name]
+	err := ts.ExecuteTemplate(w, "base.html", data)
+	if err != nil {
+		panic("error rendering template: " + err.Error())
+	}
+}
+
+func (a *WebApp) renderServerError(w http.ResponseWriter, serverError error) {
+	w.WriteHeader(http.StatusInternalServerError)
+	ts := a.Templates["server_error.html"]
+	err := ts.ExecuteTemplate(w, "base.html", serverError)
+	if err != nil {
+		panic("error rendering template: " + err.Error())
+	}
 }
 
 func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
@@ -39,11 +50,7 @@ func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *WebApp) loginPage(w http.ResponseWriter, _ *http.Request) {
-	ts := a.Templates["login.html"]
-	err := ts.ExecuteTemplate(w, "base.html", nil)
-	if err != nil {
-		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
-	}
+	a.renderTemplate(w, "login.html", nil)
 }
 
 func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
@@ -65,18 +72,6 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-//func (a *WebApp) requireAuthentication(next http.Handler) http.Handler {
-//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		_, err := r.Cookie("sid")
-//		if err != nil {
-//			http.Redirect(w, r, "/login", http.StatusFound)
-//			return
-//		}
-//		w.Header().Add("Cache-Control", "no-store")
-//		next.ServeHTTP(w, r)
-//	})
-//}
-
 func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 	sid := requireSid(w, r)
 	if sid == "" {
@@ -86,17 +81,12 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 	var tasksResponse Response[TasksData]
 	err := a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
-		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
+		a.renderServerError(w, err)
 		return
 	}
 
 	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
-	ts := a.Templates["tasks.html"]
-	err = ts.ExecuteTemplate(w, "base.html", tasksResponse.Data)
-	if err != nil {
-		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	a.renderTemplate(w, "tasks.html", tasksResponse.Data)
 }
 
 func requireSid(w http.ResponseWriter, r *http.Request) string {

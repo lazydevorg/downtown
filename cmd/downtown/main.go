@@ -8,9 +8,10 @@ import (
 )
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 	appConfig := LoadAppConfig()
 	client := NewClient(appConfig.host)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	app := App{
 		Config: appConfig,
 		Client: client,
