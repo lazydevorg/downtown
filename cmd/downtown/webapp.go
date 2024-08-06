@@ -2,6 +2,7 @@ package main
 
 import (
 	"downtown.zigdev.com/ui"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -21,6 +22,7 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("GET /login", a.loginPage)
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("GET /tasks", a.tasks)
+	mux.HandleFunc("/", a.notFound)
 	return mux
 }
 
@@ -32,9 +34,9 @@ func (a *WebApp) renderTemplate(w http.ResponseWriter, name string, data any) {
 	}
 }
 
-func (a *WebApp) renderServerError(w http.ResponseWriter, serverError error) {
+func (a *WebApp) renderError(w http.ResponseWriter, serverError error) {
 	w.WriteHeader(http.StatusInternalServerError)
-	ts := a.Templates["server_error.html"]
+	ts := a.Templates["error.html"]
 	err := ts.ExecuteTemplate(w, "base.html", serverError)
 	if err != nil {
 		panic("error rendering template: " + err.Error())
@@ -83,12 +85,18 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 	var tasksResponse Response[TasksData]
 	err := a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
-		a.renderServerError(w, err)
+		a.renderError(w, err)
 		return
 	}
 
 	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 	a.renderTemplate(w, "tasks.html", tasksResponse.Data)
+}
+
+func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {
+	err := fmt.Errorf("Page %s not found", r.URL.Path)
+	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+	a.renderError(w, err)
 }
 
 func requireSid(w http.ResponseWriter, r *http.Request) string {
