@@ -69,13 +69,13 @@ func (a *WebApp) login(w http.ResponseWriter, r *http.Request) {
 		pass: pass,
 	})
 	if err != nil {
-		http.Error(w, "Internal Server Error: "+err.Error(), http.StatusInternalServerError)
+		a.App.Logger.Error("login error", "error", err)
+		a.renderError(w, err)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:   "sid",
-		Value:  response.Data.SID,
-		Secure: true,
+		Name:  "sid",
+		Value: response.Data.SID,
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -89,6 +89,7 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 	var tasksResponse Response[TasksData]
 	err := a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
+		a.App.Logger.Error("tasks error", "error", err)
 		a.renderError(w, err)
 		return
 	}
@@ -100,6 +101,7 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
 func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {
 	err := fmt.Errorf("Page %s not found", r.URL.Path)
 	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+	a.App.Logger.Warn("page not found", "url", r.URL.Path)
 	a.renderError(w, err)
 }
 
