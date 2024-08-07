@@ -20,4 +20,4 @@ gen
 # Go workspace file
 go.work
 
-envFile
+.env
