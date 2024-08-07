@@ -16,6 +16,8 @@ var templateFunctions = template.FuncMap{
 	"humanSize": HumanizeSize,
 }
 
+type SidHandlerFunc func(w http.ResponseWriter, r *http.Request, sid string)
+
 type WebApp struct {
 	App       *App
 	Logger    *slog.Logger
@@ -28,7 +30,7 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("GET /login", a.loginPage)
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("GET /logout", a.logout)
-	mux.HandleFunc("GET /tasks", a.tasks)
+	mux.HandleFunc("GET /tasks", authenticated(a.tasks))
 	mux.HandleFunc("/", a.notFound)
 	return a.logRequests(mux)
 }
@@ -100,12 +102,7 @@ func (a *WebApp) logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request) {
-	sid := requireSid(w, r)
-	if sid == "" {
-		return
-	}
-
+func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request, sid string) {
 	var tasksResponse Response[TasksData]
 	err := a.App.Client.GetTasks(r.Context(), sid, &tasksResponse)
 	if err != nil {
@@ -125,14 +122,16 @@ func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {
 	a.renderError(w, err)
 }
 
-func requireSid(w http.ResponseWriter, r *http.Request) string {
-	sidCookie, err := r.Cookie("sid")
-	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
-		w.(http.Flusher).Flush()
-		return ""
+func authenticated(handlerFunc SidHandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sidCookie, err := r.Cookie("sid")
+		if err != nil {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			w.(http.Flusher).Flush()
+			return
+		}
+		handlerFunc(w, r, sidCookie.Value)
 	}
-	return sidCookie.Value
 }
 
 func LoadTemplates() TemplateCache {
