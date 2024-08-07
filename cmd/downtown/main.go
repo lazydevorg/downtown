@@ -8,12 +8,21 @@ import (
 )
 
 func main() {
+	appConfig := LoadAppConfig()
+
+	var logLevel slog.Level
+	if appConfig.devMode == "true" {
+		logLevel = slog.LevelDebug
+	} else {
+		logLevel = slog.LevelInfo
+	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: logLevel,
 	}))
 	slog.SetDefault(logger)
-	appConfig := LoadAppConfig()
+
 	client := NewClient(appConfig.host, logger)
+
 	app := App{
 		Config: appConfig,
 		Client: client,

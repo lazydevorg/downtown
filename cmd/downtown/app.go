@@ -7,8 +7,9 @@ import (
 )
 
 type AppConfig struct {
-	host string
-	addr string
+	host    string
+	addr    string
+	devMode string
 }
 
 type App struct {
@@ -19,8 +20,9 @@ type App struct {
 
 func LoadAppConfig() *AppConfig {
 	return &AppConfig{
-		host: requireEnvVar("DOWNLOAD_STATION_HOST"),
-		addr: optionalEnvVar("ADDR", ":4000"),
+		host:    requireEnvVar("DOWNLOAD_STATION_HOST"),
+		addr:    optionalEnvVar("ADDR", ":4000"),
+		devMode: optionalEnvVar("DEV_MODE", "false"),
 	}
 }
 
