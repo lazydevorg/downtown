@@ -6,12 +6,29 @@
     <meta name="color-scheme" content="light dark">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <title>{{template "title" .}} - Downtown</title>
+    <style>
+      .task-downloading h4 {
+        color: green;
+      }
+
+      .task-waiting h4 {
+        color: gray;
+      }
+
+      .task-finishing h4 {
+        color: gray;
+      }
+
+      .task-seeding h4 {
+        color: lightskyblue;
+      }
+    </style>
   </head>
   <body>
     <main class="container">
       <nav>
         <ul>
-          <li><strong>{{template "title" .}}</strong></li>
+          <li><h1>{{template "title" .}}</h1></li>
         </ul>
         <ul>
           {{block "nav-links" .}}{{end}}

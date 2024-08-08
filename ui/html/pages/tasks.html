@@ -3,43 +3,35 @@
 {{define "title"}}Tasks{{end}}
 
 {{define "main"}}
-    <table>
-        <thead>
-            <tr>
-                <th scope="col">Title</th>
-                <th scope="col">Size</th>
-                <th scope="col">Downloaded</th>
-                <th scope="col">Uploaded</th>
-                <th scope="col">Status</th>
-                <th scope="col">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Tasks}}
-            <tr>
-                <td>
-                    <a style="display: block; text-decoration: none" href="/tasks/{{.Id}}">{{.Title}}</a>
-                </td>
-                <td>{{humanSize .Size}}</td>
-                <td>{{humanSize .Additional.Transfer.SizeDownloaded}}</td>
-                <td>{{humanSize .Additional.Transfer.SizeUploaded}}</td>
-                <td>{{.Status}}</td>
-                <td>
-                    <div role="group">
-                        <button class="outline">P</button>
-                        <button class="outline">R</button>
-                        <button class="outline">E</button>
-                    </div>
-                </td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
-
     <form action="/tasks" method="post">
         <fieldset role="group">
             <input type="url" name="url" placeholder="URL" autocomplete="url"/>
             <input type="submit" value="Download">
         </fieldset>
     </form>
+
+    <div>
+        {{range .Tasks}}
+        <article class="grid task task-{{.Status}}">
+            <hgroup>
+                <h4>{{.Title}}</h4>
+                <p><small>Size {{humanSize .Size}}</small></p>
+                {{if eq .Status "downloading"}}
+                <p><small>Downloaded {{downloadPercentage .Additional.Transfer.SizeDownloaded .Size}}&percnt; - {{humanSize .Additional.Transfer.SizeDownloaded}} - {{humanSize .Additional.Transfer.SpeedDownload}}/s</small></p>
+                {{end}}
+                {{if eq .Status "seeding"}}
+                <p><small>Uploaded {{humanSize .Additional.Transfer.SizeUploaded}} - {{humanSize .Additional.Transfer.SpeedUpload}}/s</small></p>
+                {{end}}
+                <p>
+                    <small>Status {{.Status}}</small>
+                    <progress value="{{downloadPercentage .Additional.Transfer.SizeDownloaded .Size}}" max="100" /></p>
+            </hgroup>
+            <div>
+                <button class="outline">Pause</button>
+                <button class="outline">Restart</button>
+                <button class="outline">End</button>
+            </div>
+        </article>
+        {{end}}
+    </div>
 {{end}}

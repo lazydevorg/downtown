@@ -13,7 +13,8 @@ import (
 type TemplateCache map[string]*template.Template
 
 var templateFunctions = template.FuncMap{
-	"humanSize": HumanizeSize,
+	"humanSize":          HumanizeSize,
+	"downloadPercentage": DownloadPercentage,
 }
 
 type SidHandlerFunc func(w http.ResponseWriter, r *http.Request, sid string)
