@@ -1,7 +1,6 @@
 {{define "title"}}Tasks{{end}}
 
 {{define "main"}}
-    <h1>Tasks</h1>
     <table>
         <thead>
             <tr>
@@ -34,4 +33,11 @@
             {{end}}
         </tbody>
     </table>
+
+    <form action="/tasks" method="post">
+        <fieldset role="group">
+            <input type="url" name="url" placeholder="URL" autocomplete="url"/>
+            <input type="submit" value="Download">
+        </fieldset>
+    </form>
 {{end}}

@@ -31,6 +31,7 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("POST /login", a.login)
 	mux.HandleFunc("GET /logout", a.logout)
 	mux.HandleFunc("GET /tasks", authenticated(a.tasks))
+	mux.HandleFunc("POST /tasks", authenticated(a.newTask))
 	mux.HandleFunc("/", a.notFound)
 	return a.logRequests(mux)
 }
@@ -111,8 +112,24 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request, sid string) {
 		return
 	}
 
-	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Add("Cache-Control", "max-age=5")
 	a.renderTemplate(w, "tasks.html", tasksResponse.Data)
+}
+
+func (a *WebApp) newTask(w http.ResponseWriter, r *http.Request, sid string) {
+	url := r.FormValue("url")
+	response, err := a.App.Client.CreateTask(r.Context(), sid, TaskCreateRequest{Uri: url})
+	if err != nil {
+		a.Logger.Error("new task error", "error", err)
+		a.renderError(w, err)
+		return
+	}
+	if response.Success == false {
+		a.Logger.Error("new task error", "code", response.Error.Code)
+		a.renderError(w, fmt.Errorf("new task error: %d", response.Error.Code))
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {

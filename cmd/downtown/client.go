@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
 )
 
 const (
-	LoginUrl = "https://%s/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=%s&passwd=%s&session=DownloadStation&format=sid"
-	TasksUrl = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer"
+	LoginUrl      = "https://%s/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=%s&passwd=%s&session=DownloadStation&format=sid"
+	TasksUrl      = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer"
+	CreateTaskUrl = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=create&uri=%s"
 )
 
 type Client struct {
@@ -75,7 +75,7 @@ func (c *Client) createRequest(ctx context.Context, requestUrl string, urlParams
 	params := make([]any, len(urlParams)+1)
 	params[0] = c.host
 	for i, p := range urlParams {
-		params[i+1] = url.QueryEscape(p)
+		params[i+1] = p
 	}
 	if len(params) > 0 {
 		requestUrl = fmt.Sprintf(requestUrl, params...)
@@ -133,4 +133,21 @@ func (c *Client) GetTasks(ctx context.Context, sid string, response *Response[Ta
 		return err
 	}
 	return nil
+}
+
+type TaskCreateRequest struct {
+	Uri string
+}
+
+func (c *Client) CreateTask(ctx context.Context, sid string, data TaskCreateRequest) (*Response[any], error) {
+	request, err := c.createAuthenticatedRequest(ctx, CreateTaskUrl, sid, data.Uri)
+	if err != nil {
+		return nil, fmt.Errorf("creating new task request: %w", err)
+	}
+	var response Response[any]
+	err = doRequest(c, "new task", request, &response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
