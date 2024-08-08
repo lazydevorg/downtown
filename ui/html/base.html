@@ -9,6 +9,17 @@
   </head>
   <body>
     <main class="container">
+      <nav>
+        <ul>
+          <li><strong>{{template "title" .}}</strong></li>
+        </ul>
+        <ul>
+          {{block "nav-links" .}}{{end}}
+        </ul>
+        <ul>
+          <li><a href="/logout">Logout</a></li>
+        </ul>
+      </nav>
       {{template "main" .}}
     </main>
   </body>
