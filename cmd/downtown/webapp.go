@@ -152,22 +152,16 @@ func authenticated(handlerFunc SidHandlerFunc) http.HandlerFunc {
 }
 
 func LoadTemplates() TemplateCache {
+	base := template.Must(template.New("base.html").Funcs(templateFunctions).ParseFS(ui.Files, "html/base.html"))
 	pages, err := fs.Glob(ui.Files, "html/pages/*.html")
 	if err != nil {
 		panic("Can't load templates: " + err.Error())
 	}
 	cache := make(TemplateCache, len(pages))
-
 	for _, page := range pages {
 		name := filepath.Base(page)
-		patterns := []string{
-			"html/base.html",
-			page,
-		}
-		ts, err := template.New(name).Funcs(templateFunctions).ParseFS(ui.Files, patterns...)
-		if err != nil {
-			panic("Can't load templates: " + err.Error())
-		}
+		ts := template.Must(base.Clone())
+		ts = template.Must(ts.New(name).ParseFS(ui.Files, page))
 		cache[name] = ts
 	}
 	return cache
