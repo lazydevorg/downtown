@@ -38,7 +38,7 @@ func (a *WebApp) routes() http.Handler {
 
 func (a *WebApp) renderTemplate(w http.ResponseWriter, name string, data any) {
 	ts := a.Templates[name]
-	err := ts.ExecuteTemplate(w, "base.html", data)
+	err := ts.ExecuteTemplate(w, name, data)
 	if err != nil {
 		panic("error rendering template: " + err.Error())
 	}
@@ -47,7 +47,7 @@ func (a *WebApp) renderTemplate(w http.ResponseWriter, name string, data any) {
 func (a *WebApp) renderError(w http.ResponseWriter, serverError error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	ts := a.Templates["error.html"]
-	err := ts.ExecuteTemplate(w, "base.html", serverError)
+	err := ts.ExecuteTemplate(w, "error.html", serverError)
 	if err != nil {
 		panic("error rendering template: " + err.Error())
 	}
