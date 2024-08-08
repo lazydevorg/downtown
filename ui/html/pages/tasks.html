@@ -6,22 +6,30 @@
         <thead>
             <tr>
                 <th scope="col">Title</th>
-                <th scope="col">Status</th>
-                <th scope="col">Type</th>
                 <th scope="col">Size</th>
                 <th scope="col">Downloaded</th>
                 <th scope="col">Uploaded</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
             </tr>
         </thead>
         <tbody>
             {{range .Tasks}}
             <tr>
-                <td>{{.Title}}</td>
-                <td>{{.Status}}</td>
-                <td>{{.Type}}</td>
+                <td>
+                    <a style="display: block; text-decoration: none" href="/tasks/{{.Id}}">{{.Title}}</a>
+                </td>
                 <td>{{humanSize .Size}}</td>
                 <td>{{humanSize .Additional.Transfer.SizeDownloaded}}</td>
                 <td>{{humanSize .Additional.Transfer.SizeUploaded}}</td>
+                <td>{{.Status}}</td>
+                <td>
+                    <div role="group">
+                        <button class="outline">P</button>
+                        <button class="outline">R</button>
+                        <button class="outline">E</button>
+                    </div>
+                </td>
             </tr>
             {{end}}
         </tbody>
