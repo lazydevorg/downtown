@@ -10,21 +10,26 @@
         </fieldset>
     </form>
 
-    <div>
+    <div id="tasks" hx-get="/tasks" hx-trigger="every 2s" hx-swap="outerHTML" hx-select="#tasks">
         {{range .Tasks}}
         <article class="grid task task-{{.Status}}">
             <hgroup>
                 <h4>{{.Title}}</h4>
                 <p><small>Size {{humanSize .Size}}</small></p>
                 {{if eq .Status "downloading"}}
-                <p><small>Downloaded {{downloadPercentage .Additional.Transfer.SizeDownloaded .Size}}&percnt; - {{humanSize .Additional.Transfer.SizeDownloaded}} - {{humanSize .Additional.Transfer.SpeedDownload}}/s</small></p>
+                <p><small>Downloaded {{progressPercentage .Additional.Transfer.SizeDownloaded .Size}}&percnt; - {{humanSize .Additional.Transfer.SizeDownloaded}} - {{humanSize .Additional.Transfer.SpeedDownload}}/s</small></p>
                 {{end}}
                 {{if eq .Status "seeding"}}
-                <p><small>Uploaded {{humanSize .Additional.Transfer.SizeUploaded}} - {{humanSize .Additional.Transfer.SpeedUpload}}/s</small></p>
+                <p><small>Uploaded {{progressPercentage .Additional.Transfer.SizeUploaded .Size}}&percnt; - {{humanSize .Additional.Transfer.SizeUploaded}} - {{humanSize .Additional.Transfer.SpeedUpload}}/s</small></p>
                 {{end}}
                 <p>
                     <small>Status {{.Status}}</small>
-                    <progress value="{{downloadPercentage .Additional.Transfer.SizeDownloaded .Size}}" max="100" /></p>
+                    {{if eq .Status "downloading"}}
+                    <progress value="{{progressPercentage .Additional.Transfer.SizeDownloaded .Size}}" max="100" />
+                    {{else if eq .Status "seeding"}}
+                    <progress value="{{progressPercentage .Additional.Transfer.SizeUploaded .Size}}" max="100" />
+                    {{end}}
+                </p>
             </hgroup>
             <div>
                 <button class="outline">Pause</button>

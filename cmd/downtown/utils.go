@@ -28,6 +28,6 @@ func HumanizeSize(bytes int64) string {
 	return fmt.Sprintf("%.2f%s", size, unit)
 }
 
-func DownloadPercentage(downloaded, size int64) string {
+func ProgressPercentage(downloaded, size int64) string {
 	return fmt.Sprintf("%.1f", float64(downloaded)/float64(size)*100)
 }
