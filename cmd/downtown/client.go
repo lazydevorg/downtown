@@ -47,7 +47,12 @@ func doRequest[T any](c *Client, name string, request *http.Request, response *R
 		c.logger.Debug("Error executing request", "name", name, "error", err)
 		return fmt.Errorf("doing %s request: %w", name, err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			c.logger.Error("error closing response body", "name", name, "error", err)
+		}
+	}()
 
 	err = json.NewDecoder(res.Body).Decode(response)
 	if err != nil {
