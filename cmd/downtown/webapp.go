@@ -1,13 +1,14 @@
 package main
 
 import (
-	"downtown.zigdev.com/ui"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"path/filepath"
+
+	"downtown.zigdev.com/ui"
 )
 
 type TemplateCache map[string]*template.Template
@@ -33,6 +34,7 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("GET /logout", a.logout)
 	mux.HandleFunc("GET /tasks", authenticated(a.tasks))
 	mux.HandleFunc("POST /tasks", authenticated(a.newTask))
+	mux.HandleFunc("GET /up", a.health)
 	mux.HandleFunc("/", a.notFound)
 	return a.logRequests(mux)
 }
@@ -69,6 +71,7 @@ func (a *WebApp) home(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Redirect(w, r, "/tasks", http.StatusFound)
 	}
+
 }
 
 func (a *WebApp) loginPage(w http.ResponseWriter, _ *http.Request) {
@@ -114,6 +117,7 @@ func (a *WebApp) tasks(w http.ResponseWriter, r *http.Request, sid string) {
 	}
 
 	w.Header().Add("Cache-Control", "max-age=5")
+	//w.WriteHeader(401)
 	a.renderTemplate(w, "tasks.html", tasksResponse.Data)
 }
 
@@ -138,6 +142,10 @@ func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 	a.Logger.Warn("page not found", "url", r.URL.Path)
 	a.renderError(w, err)
+}
+
+func (a *WebApp) health(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 func authenticated(handlerFunc SidHandlerFunc) http.HandlerFunc {

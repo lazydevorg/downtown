@@ -46,7 +46,7 @@ func main() {
 	logger.Info("Server started", "addr", srv.Addr)
 	err := srv.ListenAndServe()
 	if err != nil {
-		logger.Error("Shutting down the server: %v", err)
+		logger.Error("Shutting down the server", "error", err)
 		os.Exit(1)
 	}
 }

@@ -10,7 +10,7 @@
         </fieldset>
     </form>
 
-    <div id="tasks" hx-get="/tasks" hx-trigger="every 2s" hx-swap="outerHTML" hx-select="#tasks">
+    <div id="tasks" hx-get="/tasks" hx-trigger="every 5s" hx-swap="outerHTML" hx-select="#tasks">
         {{range .Tasks}}
         <article class="grid task task-{{.Status}}">
             <hgroup>
