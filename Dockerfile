@@ -19,5 +19,5 @@ FROM alpine
 
 COPY --from=builder /downtown .
 
-EXPOSE 4040
+EXPOSE 4000
 ENTRYPOINT ["/downtown"]
