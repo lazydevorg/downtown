@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/lazydevorg/downtown/ui"
 	"html/template"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"path/filepath"
-
-	"downtown.zigdev.com/ui"
 )
 
 type TemplateCache map[string]*template.Template
