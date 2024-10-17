@@ -34,6 +34,9 @@ func (a *WebApp) routes() http.Handler {
 	mux.HandleFunc("GET /logout", a.logout)
 	mux.HandleFunc("GET /tasks", authenticated(a.tasks))
 	mux.HandleFunc("POST /tasks", authenticated(a.newTask))
+	mux.HandleFunc("DELETE /tasks/{id}", authenticated(a.deleteTask))
+	mux.HandleFunc("PUT /tasks/{id}/pause", authenticated(a.pauseTask))
+	mux.HandleFunc("PUT /tasks/{id}/resume", authenticated(a.resumeTask))
 	mux.HandleFunc("GET /up", a.health)
 	mux.HandleFunc("/", a.notFound)
 	return a.logRequests(mux)
@@ -129,12 +132,45 @@ func (a *WebApp) newTask(w http.ResponseWriter, r *http.Request, sid string) {
 		a.renderError(w, err)
 		return
 	}
-	if response.Success == false {
+	if !response.Success {
 		a.Logger.Error("new task error", "code", response.Error.Code)
 		a.renderError(w, fmt.Errorf("new task error: %d", response.Error.Code))
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/tasks", http.StatusFound)
+}
+
+func (a *WebApp) deleteTask(w http.ResponseWriter, r *http.Request, sid string) {
+	id := r.PathValue("id")
+	err := a.App.Client.DeleteTask(r.Context(), sid, id)
+	if err != nil {
+		a.Logger.Error("delete task error", "error", err)
+		a.renderError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/tasks", http.StatusFound)
+}
+
+func (a *WebApp) pauseTask(w http.ResponseWriter, r *http.Request, sid string) {
+	id := r.PathValue("id")
+	err := a.App.Client.PauseTask(r.Context(), sid, id)
+	if err != nil {
+		a.Logger.Error("pause task error", "error", err)
+		a.renderError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/tasks", http.StatusFound)
+}
+
+func (a *WebApp) resumeTask(w http.ResponseWriter, r *http.Request, sid string) {
+	id := r.PathValue("id")
+	err := a.App.Client.ResumeTask(r.Context(), sid, id)
+	if err != nil {
+		a.Logger.Error("resume task error", "error", err)
+		a.renderError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/tasks", http.StatusFound)
 }
 
 func (a *WebApp) notFound(w http.ResponseWriter, r *http.Request) {

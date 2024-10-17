@@ -10,8 +10,11 @@ import (
 )
 
 const (
-	ExpectedLoginUrl = "/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=user&passwd=pass&session=DownloadStation&format=sid"
-	ExpectedTasksUrl = "/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer&_sid=SID"
+	ExpectedLoginUrl      = "/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=user&passwd=pass&session=DownloadStation&format=sid"
+	ExpectedTasksUrl      = "/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer&_sid=SID"
+	ExpectedDeleteTaskUrl = "/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=delete&id=ID1&_sid=SID"
+	ExpectedPauseTaskUrl  = "/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=pause&id=ID1&_sid=SID"
+	ExpectedResumeTaskUrl = "/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=resume&id=ID1&_sid=SID"
 )
 
 func TestSuccessfulDoRequest(t *testing.T) {
@@ -112,6 +115,60 @@ func TestTasks(t *testing.T) {
 
 	var response Response[TasksData]
 	err := c.GetTasks(context.Background(), "SID", &response)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDeleteTask(t *testing.T) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() != ExpectedDeleteTaskUrl {
+			t.Errorf("delete task url '%s' used but expected '%s'", r.URL.RequestURI(), ExpectedDeleteTaskUrl)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		data := []byte(`{"data":[{"id":"ID1","error": 0}],"success":true}`)
+		_, _ = w.Write(data)
+	})
+	defer s.Close()
+
+	err := c.DeleteTask(context.Background(), "SID", "ID1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPauseTask(t *testing.T) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() != ExpectedPauseTaskUrl {
+			t.Errorf("delete task url '%s' used but expected '%s'", r.URL.RequestURI(), ExpectedPauseTaskUrl)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		data := []byte(`{"data":[{"id":"ID1","error": 0}],"success":true}`)
+		_, _ = w.Write(data)
+	})
+	defer s.Close()
+
+	err := c.PauseTask(context.Background(), "SID", "ID1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResumeTask(t *testing.T) {
+	c, s := testClient(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() != ExpectedResumeTaskUrl {
+			t.Errorf("delete task url '%s' used but expected '%s'", r.URL.RequestURI(), ExpectedResumeTaskUrl)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		data := []byte(`{"data":[{"id":"ID1","error": 0}],"success":true}`)
+		_, _ = w.Write(data)
+	})
+	defer s.Close()
+
+	err := c.ResumeTask(context.Background(), "SID", "ID1")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,7 +12,7 @@
 
     <div id="tasks" hx-get="/tasks" hx-trigger="every 5s" hx-swap="outerHTML" hx-select="#tasks">
         {{range .Tasks}}
-        <article class="grid task task-{{.Status}}">
+        <article id="task-{{.Id}}" class="grid task task-{{.Status}}">
             <hgroup>
                 <h4>{{.Title}}</h4>
                 <p><small>Size {{humanSize .Size}}</small></p>
@@ -32,9 +32,12 @@
                 </p>
             </hgroup>
             <div>
-                <button class="outline">Pause</button>
-                <button class="outline">Restart</button>
-                <button class="outline">End</button>
+                {{if eq .Status "paused"}}
+                    <button class="outline" hx-put="/tasks/{{.Id}}/resume">Resume</button>
+                {{else}}
+                    <button class="outline" hx-put="/tasks/{{.Id}}/pause">Pause</button>
+                {{end}}
+                <button class="outline" hx-delete="/tasks/{{.Id}}" hx-confirm="Are you sure you want to delete the task?">Delete</button>
             </div>
         </article>
         {{end}}

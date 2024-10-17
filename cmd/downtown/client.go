@@ -13,6 +13,9 @@ const (
 	LoginUrl      = "https://%s/webapi/entry.cgi?api=SYNO.API.Auth&version=6&method=login&account=%s&passwd=%s&session=DownloadStation&format=sid"
 	TasksUrl      = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=list&additional=transfer"
 	CreateTaskUrl = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=create&uri=%s"
+	DeleteTaskUrl = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=delete&id=%s"
+	PauseTaskUrl  = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=pause&id=%s"
+	ResumeTaskUrl = "https://%s/webapi/DownloadStation/task.cgi?api=SYNO.DownloadStation.Task&version=1&method=resume&id=%s"
 )
 
 type Client struct {
@@ -155,4 +158,57 @@ func (c *Client) CreateTask(ctx context.Context, sid string, data TaskCreateRequ
 		return nil, err
 	}
 	return &response, nil
+}
+
+type TaskChangeData []struct {
+	Id    string `json:"id"`
+	Error int    `json:"error"`
+}
+
+func (c *Client) DeleteTask(ctx context.Context, sid string, id string) error {
+	request, err := c.createAuthenticatedRequest(ctx, DeleteTaskUrl, sid, id)
+	if err != nil {
+		return fmt.Errorf("creating tasks request: %w", err)
+	}
+	var response Response[TaskChangeData]
+	err = doRequest(c, "task delete", request, &response)
+	if err != nil {
+		return err
+	}
+	if response.Error.Code != 0 {
+		return fmt.Errorf("error deleting task: %d", response.Error.Code)
+	}
+	return nil
+}
+
+func (c *Client) PauseTask(ctx context.Context, sid string, id string) error {
+	request, err := c.createAuthenticatedRequest(ctx, PauseTaskUrl, sid, id)
+	if err != nil {
+		return fmt.Errorf("creating tasks request: %w", err)
+	}
+	var response Response[TaskChangeData]
+	err = doRequest(c, "task pause", request, &response)
+	if err != nil {
+		return err
+	}
+	if response.Error.Code != 0 {
+		return fmt.Errorf("error pausing task: %d", response.Error.Code)
+	}
+	return nil
+}
+
+func (c *Client) ResumeTask(ctx context.Context, sid string, id string) error {
+	request, err := c.createAuthenticatedRequest(ctx, ResumeTaskUrl, sid, id)
+	if err != nil {
+		return fmt.Errorf("creating tasks request: %w", err)
+	}
+	var response Response[TaskChangeData]
+	err = doRequest(c, "task resume", request, &response)
+	if err != nil {
+		return err
+	}
+	if response.Error.Code != 0 {
+		return fmt.Errorf("error resuming task: %d", response.Error.Code)
+	}
+	return nil
 }
