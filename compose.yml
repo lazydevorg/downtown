@@ -1,8 +1,0 @@
-services:
-  downtown:
-    image: downtown
-    build: .
-    ports:
-      - "4000:4000"
-    environment:
-      DOWNLOAD_STATION_HOST: "192.168.50.38:5001"
