@@ -23,6 +23,8 @@ go build ./cmd/downtown
 ./downtown
 ```
 
+Open you browser at http://localhost:4000
+
 Optionally you can build it using the Dockerfile included.
 
 ## Screenshot
